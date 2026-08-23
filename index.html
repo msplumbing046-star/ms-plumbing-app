@@ -792,83 +792,344 @@ function shareSavedWhatsApp(i){
   window.open(url,'_blank');
 }
 
-function buildPDF(q){
+ function buildPDF(q){
   q=normalizeQuote(q);
+
   const {jsPDF}=window.jspdf;
   const doc=new jsPDF();
-  let y=18;
-  doc.setFontSize(20); doc.text('MS Plumbing',14,y); y+=8;
-  doc.setFontSize(10); doc.text('Cotización profesional • 787-221-2310',14,y); y+=10;
+
+  const pageW=doc.internal.pageSize.getWidth();
+  const navy=[7,29,58];
+  const blue=[11,94,215];
+  const red=[215,25,32];
+  const light=[245,248,252];
+  const gray=[95,105,120];
+
+  const moneyPDF=n=>'$'+Number(n||0).toFixed(2);
+
+  const subtotal=Number(q.subtotal||0);
+  const tax=Number(q.tax||0);
+  const factor=Number(q.materialFactor||1.25);
+  const labor=Number(q.labor||0);
+
+  const cargoOperativo=(subtotal+tax)*(factor-1);
+  const total=(subtotal+tax)+cargoOperativo+labor;
+
+  // ===== LOGO =====
+  try{
+    const logo=
+      document.querySelector('header.brand img') ||
+      document.querySelector('.brand img') ||
+      document.querySelector('img[alt*="Logo"]');
+
+    if(logo && logo.complete){
+      doc.addImage(logo,'JPEG',12,10,42,31);
+    }
+  }catch(e){}
+
+  // ===== ENCABEZADO =====
+  doc.setTextColor(...navy);
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(22);
+  doc.text('MS PLUMBING',60,18);
+
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(10);
+  doc.setTextColor(30,30,30);
+  doc.text('Servicios Profesionales de Plomería',60,24);
+
+  doc.setFont('helvetica','bold');
+  doc.setTextColor(...red);
+  doc.text('787-221-2310',60,30);
+
+  doc.setFont('helvetica','normal');
+  doc.setTextColor(...gray);
+  doc.text('Puerto Rico',60,36);
+
+  doc.setDrawColor(...navy);
+  doc.setLineWidth(1);
+  doc.line(12,45,pageW-12,45);
+
+  // ===== TITULO =====
+  doc.setTextColor(...navy);
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(18);
+  doc.text('COTIZACIÓN DE SERVICIOS',12,56);
+
+  // Número
+  doc.setFillColor(...navy);
+  doc.roundedRect(12,62,55,18,2,2,'F');
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(8);
+  doc.text('NÚMERO DE COTIZACIÓN',16,68);
+  doc.setFontSize(13);
+  doc.text(String(q.number||''),16,76);
+
+  // Fecha
+  doc.setTextColor(...navy);
+  doc.setFontSize(8);
+  doc.text('FECHA',82,67);
   doc.setFontSize(11);
-  doc.text(`Cotización: ${q.number}`,14,y); doc.text(`Fecha: ${q.date}`,120,y); y+=8;
-  doc.text(`Cliente: ${q.client}`,14,y); y+=7;
-  doc.text(`Teléfono: ${q.phone||''}`,14,y); y+=7;
-  doc.text(`Dirección: ${q.address||''}`,14,y); y+=10;
-  doc.text('Descripción:',14,y); y+=6;
-  const lines=doc.splitTextToSize(q.description||'',180);
-  doc.text(lines,14,y); y+=lines.length*6+6;
-  doc.setFont(undefined,'bold');
-  doc.text('Material',14,y); doc.text('Cant.',115,y); doc.text('Precio',140,y); doc.text('Total',170,y); y+=6;
-  doc.setFont(undefined,'normal');
-  q.items.forEach(it=>{
-    if(y>265){doc.addPage();y=20}
-    doc.text(String(it.name).slice(0,42),14,y);
-    doc.text(String(it.qty),118,y);
-    doc.text(money(it.price),138,y);
-    doc.text(money(it.qty*it.price),168,y);
+  doc.text(String(q.date||''),82,75);
+
+  // Vigencia
+  doc.setFontSize(8);
+  doc.text('VIGENCIA',142,67);
+  doc.setFontSize(10);
+  doc.text('10 días hábiles',142,75);
+
+  // ===== CLIENTE =====
+  let y=88;
+
+  doc.setFillColor(...navy);
+  doc.roundedRect(12,y,pageW-24,8,2,2,'F');
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(10);
+  doc.setFont('helvetica','bold');
+  doc.text('INFORMACIÓN DEL CLIENTE',16,y+5.5);
+
+  y+=13;
+  doc.setTextColor(30,30,30);
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(10);
+
+  doc.text('Cliente:',16,y);
+  doc.setFont('helvetica','bold');
+  doc.text(String(q.client||''),38,y);
+
+  doc.setFont('helvetica','normal');
+  doc.text('Teléfono:',110,y);
+  doc.setFont('helvetica','bold');
+  doc.text(String(q.phone||''),132,y);
+
+  y+=7;
+  doc.setFont('helvetica','normal');
+  doc.text('Dirección:',16,y);
+  doc.setFont('helvetica','bold');
+
+  const addressLines=doc.splitTextToSize(String(q.address||''),145);
+  doc.text(addressLines,38,y);
+
+  y+=Math.max(10,addressLines.length*5+4);
+
+  // ===== DESCRIPCIÓN =====
+  doc.setFillColor(...navy);
+  doc.roundedRect(12,y,pageW-24,8,2,2,'F');
+  doc.setTextColor(255,255,255);
+  doc.setFont('helvetica','bold');
+  doc.text('DESCRIPCIÓN DEL TRABAJO',16,y+5.5);
+
+  y+=13;
+  doc.setTextColor(30,30,30);
+  doc.setFont('helvetica','normal');
+
+  const desc=doc.splitTextToSize(String(q.description||''),180);
+  doc.text(desc,16,y);
+  y+=desc.length*5+6;
+
+  // ===== MATERIALES =====
+  doc.setFillColor(...navy);
+  doc.roundedRect(12,y,pageW-24,8,2,2,'F');
+  doc.setTextColor(255,255,255);
+  doc.setFont('helvetica','bold');
+  doc.text('MATERIALES Y EQUIPOS',16,y+5.5);
+
+  y+=13;
+
+  doc.setFillColor(238,242,248);
+  doc.rect(12,y,pageW-24,8,'F');
+
+  doc.setTextColor(...navy);
+  doc.setFontSize(9);
+  doc.text('DESCRIPCIÓN',16,y+5.5);
+  doc.text('CANT.',116,y+5.5);
+  doc.text('PRECIO',140,y+5.5);
+  doc.text('TOTAL',174,y+5.5);
+
+  y+=9;
+
+  doc.setTextColor(30,30,30);
+  doc.setFont('helvetica','normal');
+
+  (q.items||[]).forEach(it=>{
+    if(Number(it.qty||0)<=0) return;
+
+    if(y>220){
+      doc.addPage();
+      y=20;
+    }
+
+    const itemTotal=Number(it.qty||0)*Number(it.price||0);
+
+    doc.text(String(it.name||'').slice(0,42),16,y);
+    doc.text(String(it.qty||0),118,y);
+    doc.text(moneyPDF(it.price),140,y);
+    doc.text(moneyPDF(itemTotal),174,y);
+
+    doc.setDrawColor(220,225,232);
+    doc.line(12,y+2,pageW-12,y+2);
+
     y+=7;
   });
-  y+=5;
-  doc.text(`Subtotal materiales: ${money(q.subtotal)}`,120,y); y+=7;
-  doc.text(`Materiales x ${Number(q.materialFactor||1.25).toFixed(2)}: ${money(q.factorTotal)}`,120,y); y+=7;
-  doc.text(`IVU (${q.taxRate}%): ${money(q.tax)}`,120,y); y+=7;
-  doc.text(`Mano de obra: ${money(q.labor)}`,120,y); y+=8;
-  doc.setFont(undefined,'bold'); doc.setFontSize(14);
-  doc.text(`TOTAL: ${money(q.total)}`,120,y);
-  doc.addPage();
-  doc.setFontSize(14); doc.setFont(undefined,'bold');
-  doc.text('Términos y condiciones',14,20);
-  doc.setFontSize(10); doc.setFont(undefined,'normal');
-  const terms = [
-    'Vigencia de la cotización: Esta cotización tendrá una vigencia de 10 días hábiles a partir de la fecha de emisión. Luego de este periodo, precios, materiales y disponibilidad estarán sujetos a revisión.',
-    'Materiales no especificados: Todo material, pieza, equipo o trabajo adicional que no esté expresamente especificado en esta cotización no está incluido en el precio y, de ser necesario, se cotizará por separado.',
-    'Daños o condiciones imprevistas: MS Plumbing no será responsable por daños o condiciones preexistentes, ocultas o imprevistas que no puedan identificarse razonablemente antes de comenzar el trabajo. Cualquier reparación o trabajo adicional necesario por dichas condiciones será informado al cliente y cotizado por separado.'
-  ];
-  let ty=32;
-  terms.forEach((t,idx)=>{
-    const lines=doc.splitTextToSize((idx+1)+'. '+t,180);
-    doc.text(lines,14,ty);
-    ty+=lines.length*5+7;
-  });
-  ty+=6;
-  doc.setFontSize(12); doc.setFont(undefined,'bold');
-  doc.text('Aceptación y firmas',14,ty); ty+=8;
-  doc.setFontSize(9); doc.setFont(undefined,'normal');
-  doc.text(`Estado: ${q.acceptanceStatus||'Pendiente'}`,14,ty);
-  doc.text(`Fecha: ${q.acceptanceDate||q.date||''}`,110,ty);
-  ty+=7;
-  doc.text(`Cliente: ${q.clientSignerName||q.client||''}`,14,ty);
-  doc.text(`MS Plumbing: ${q.companySignerName||'MS Plumbing'}`,110,ty);
-  ty+=8;
 
+  y+=5;
+
+  // ===== RESUMEN DE COSTOS =====
+  if(y>205){
+    doc.addPage();
+    y=20;
+  }
+
+  doc.setFillColor(...navy);
+  doc.roundedRect(105,y,93,8,2,2,'F');
+  doc.setTextColor(255,255,255);
+  doc.setFont('helvetica','bold');
+  doc.text('RESUMEN DE COSTOS',110,y+5.5);
+
+  y+=13;
+
+  doc.setTextColor(30,30,30);
+  doc.setFont('helvetica','normal');
+  doc.text('Subtotal materiales',110,y);
+  doc.text(moneyPDF(subtotal),174,y);
+
+  y+=7;
+  doc.text('IVU ('+Number(q.taxRate||11.5).toFixed(1)+'%)',110,y);
+  doc.text(moneyPDF(tax),174,y);
+
+  y+=7;
+  doc.setFont('helvetica','bold');
+  doc.setTextColor(...blue);
+  doc.text('Cargo operativo 25%',110,y);
+  doc.text(moneyPDF(cargoOperativo),174,y);
+
+  y+=5;
+  doc.setFont('helvetica','normal');
+  doc.setTextColor(...gray);
+  doc.setFontSize(8);
+
+  const cargoNota=doc.splitTextToSize(
+    'Incluye millaje, combustible, consumibles y materiales menores no cotizados individualmente.',
+    82
+  );
+  doc.text(cargoNota,110,y);
+
+  y+=cargoNota.length*4+5;
+
+  doc.setFontSize(10);
+  doc.setTextColor(30,30,30);
+  doc.text('Mano de obra',110,y);
+  doc.text(moneyPDF(labor),174,y);
+
+  y+=9;
+
+  doc.setFillColor(...red);
+  doc.roundedRect(105,y,93,13,2,2,'F');
+
+  doc.setTextColor(255,255,255);
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(15);
+  doc.text('TOTAL',110,y+8.5);
+  doc.text(moneyPDF(total),166,y+8.5);
+
+  y+=21;
+
+  // ===== TÉRMINOS =====
+  if(y>220){
+    doc.addPage();
+    y=20;
+  }
+
+  doc.setFillColor(...navy);
+  doc.roundedRect(12,y,pageW-24,8,2,2,'F');
+
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(10);
+  doc.setFont('helvetica','bold');
+  doc.text('TÉRMINOS Y CONDICIONES',16,y+5.5);
+
+  y+=13;
+  doc.setTextColor(30,30,30);
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(8.5);
+
+  const terms=[
+    '1. Esta cotización tendrá una vigencia de 10 días hábiles a partir de la fecha de emisión.',
+    '2. Todo material, pieza, equipo o trabajo adicional no especificado se cotizará por separado.',
+    '3. MS Plumbing no será responsable por daños o condiciones preexistentes, ocultas o imprevistas que no puedan identificarse razonablemente antes de comenzar el trabajo.',
+    '4. El cargo operativo incluye millaje, combustible, consumibles y materiales menores que no se cotizan individualmente.'
+  ];
+
+  terms.forEach(t=>{
+    const ls=doc.splitTextToSize(t,180);
+    doc.text(ls,16,y);
+    y+=ls.length*4+3;
+  });
+
+  y+=4;
+
+  // ===== FIRMAS =====
+  if(y>235){
+    doc.addPage();
+    y=20;
+  }
+
+  doc.setFillColor(...navy);
+  doc.roundedRect(12,y,88,8,2,2,'F');
+  doc.roundedRect(110,y,88,8,2,2,'F');
+
+  doc.setTextColor(255,255,255);
+  doc.setFont('helvetica','bold');
+  doc.text('ACEPTACIÓN DEL CLIENTE',16,y+5.5);
+  doc.text('MS PLUMBING',114,y+5.5);
+
+  y+=15;
+
+  doc.setTextColor(30,30,30);
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(9);
+
+  doc.text('Nombre: '+String(q.clientSignerName||q.client||''),16,y);
+  doc.text('Representante: '+String(q.companySignerName||'MS Plumbing'),114,y);
+
+  y+=8;
+
+  // Firma cliente
   if(q.clientSignature){
     try{
-      doc.addImage(q.clientSignature,'PNG',14,ty,78,34);
-      doc.text('Firma del cliente',14,ty+39);
+      doc.addImage(q.clientSignature,'PNG',16,y,65,25);
     }catch(e){}
+  }else{
+    doc.line(16,y+20,88,y+20);
   }
+
+  // Firma compañía
   if(q.companySignature){
     try{
-      doc.addImage(q.companySignature,'PNG',110,ty,78,34);
-      doc.text('Firma de MS Plumbing',110,ty+39);
+      doc.addImage(q.companySignature,'PNG',114,y,65,25);
     }catch(e){}
+  }else{
+    doc.line(114,y+20,186,y+20);
   }
 
-  doc.setFontSize(9);
-  doc.text('Gracias por confiar en MS Plumbing.',14,285);
+  y+=28;
+
+  doc.setFontSize(8);
+  doc.text('Firma del cliente',16,y);
+  doc.text('Firma MS Plumbing',114,y);
+
+  y+=9;
+  doc.text('Fecha: '+String(q.acceptanceDate||q.date||''),16,y);
+  doc.text('Fecha: '+String(q.acceptanceDate||q.date||''),114,y);
+
+  // ===== PIE =====
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(10);
+  doc.setTextColor(...navy);
+  doc.text('¡Gracias por confiar en MS Plumbing!',pageW/2,287,{align:'center'});
+
   return doc;
 }
-
 function downloadPDF(){
   const q=getQuoteData();
   if(!q.client){alert('Selecciona o guarda un cliente primero');return}
