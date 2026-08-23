@@ -663,8 +663,8 @@ function setMaterial(i,val){
 function calcQuote(){
   const subtotal=qItems.reduce((s,it)=>s+(Number(it.qty)||0)*(Number(it.price)||0),0);
   const factor=Number($('materialFactor').value||1.25);
-  const factorTotal=subtotal*factor;
-  const tax=subtotal*(Number($('taxRate').value||0)/100);
+  const tax=subtotal*(Number($('taxRate').value||0)/100;
+  const factorTotal=(subtotal+tax)*factor;
   const labor=Number($('labor').value||0);
   const total=factorTotal+tax+labor;
   $('matSubtotal').textContent=money(subtotal);
@@ -730,8 +730,8 @@ function renderQuotes(){
 function normalizeQuote(q){
   if(q.factorTotal===undefined){
     q.materialFactor=Number(q.materialFactor||1.25);
-    q.factorTotal=Number(q.subtotal||0)*q.materialFactor;
-    q.total=q.factorTotal+Number(q.tax||0)+Number(q.labor||0);
+    q.factorTotal=(Number(q.subtotal||0)+Number(q.tax||0))*q.materialFactor;
+    q.total=q.factorTotal+Number(q.labor||0;
   }
   return q;
 }
@@ -758,8 +758,9 @@ function quoteMessage(q){
   lines.push(
     '',
     'Materiales: '+money(q.subtotal),
-    'Materiales × '+Number(q.materialFactor||1.25).toFixed(2)+': '+money(q.factorTotal),
-    'IVU ('+q.taxRate+'%): '+money(q.tax),
+    'IVU ('+q.taxRate+'%): '+money(q.tax)
+    'Cargo operativo 25%: 'money((Number(q.subtotal||0)+Number(q.tax||0))*(Number(q.materialFactor||1.25,
+    'Incluye millaje, combustible, consumibles y materiales menores no cotizados individualmente.',                                                                             
     'Mano de obra: '+money(q.labor),
     '*TOTAL: '+money(q.total)+'*',
     '',
