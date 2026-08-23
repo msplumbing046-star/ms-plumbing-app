@@ -731,7 +731,7 @@ function normalizeQuote(q){
   if(q.factorTotal===undefined){
     q.materialFactor=Number(q.materialFactor||1.25);
     q.factorTotal=(Number(q.subtotal||0)+Number(q.tax||0))*q.materialFactor;
-    q.total=q.factorTotal+Number(q.labor||0;
+    q.total=q.factorTotal+Number(q.labor||0);
   }
   return q;
 }
@@ -758,8 +758,8 @@ function quoteMessage(q){
   lines.push(
     '',
     'Materiales: '+money(q.subtotal),
-    'IVU ('+q.taxRate+'%): '+money(q.tax)
-    'Cargo operativo 25%: 'money((Number(q.subtotal||0)+Number(q.tax||0))*(Number(q.materialFactor||1.25,
+    'IVU ('+q.taxRate+'%): '+money(q.tax),
+    'Cargo operativo 25%: '+money((Number(q.subtotal||0)+Number(q.tax||0))*(Number(q.materialFactor||1.25)-1)),
     'Incluye millaje, combustible, consumibles y materiales menores no cotizados individualmente.',                                                                             
     'Mano de obra: '+money(q.labor),
     '*TOTAL: '+money(q.total)+'*',
