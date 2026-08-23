@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b5ed7">
+  <link rel="manifest" href="manifest.json">
+  <title>MS Plumbing</title>
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:#f4f7fb;color:#182230}
+    header{position:sticky;top:0;background:#0b5ed7;color:white;padding:14px 16px;font-weight:800;font-size:20px;z-index:5}
+    .tabs{display:flex;overflow:auto;background:white;border-bottom:1px solid #dde3ea;position:sticky;top:50px;z-index:4}
+    .tabs button{flex:1;min-width:120px;border:0;background:white;padding:13px 10px;font-weight:700}
+    .tabs button.active{color:#0b5ed7;border-bottom:3px solid #0b5ed7}
+    .page{display:none;padding:14px;max-width:900px;margin:auto}
+    .page.active{display:block}
+    .card{background:white;border-radius:16px;padding:14px;margin-bottom:12px;box-shadow:0 2px 12px rgba(0,0,0,.06)}
+    h2{font-size:18px;margin:0 0 12px}
+    label{display:block;font-size:13px;font-weight:700;margin:9px 0 5px}
+    input,textarea,select{width:100%;padding:12px;border:1px solid #cfd7e1;border-radius:10px;font-size:16px}
+    textarea{min-height:78px}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .btn{border:0;border-radius:11px;padding:12px 14px;font-size:15px;font-weight:800}
+    .primary{background:#0b5ed7;color:white}
+    .secondary{background:#e9eef5;color:#182230}
+    .danger{background:#fee2e2;color:#991b1b}
+    .full{width:100%}
+    .material-row{display:grid;grid-template-columns:1fr 72px 92px 44px;gap:7px;margin:8px 0}
+    .summary{line-height:1.8}
+    .total{font-size:28px;font-weight:900;text-align:right}
+    .saved-item{border-bottom:1px solid #edf0f3;padding:10px 0}
+    .saved-item:last-child{border-bottom:0}
+    .muted{color:#667085;font-size:13px}
+    .pill{display:inline-block;background:#eef4ff;padding:4px 8px;border-radius:999px;font-size:12px}
+    @media(max-width:640px){
+      .row{grid-template-columns:1fr}
+      .material-row{grid-template-columns:1fr 60px 82px 40px}
+    }
+  </style>
+</head>
+<body>
+<header>MS Plumbing</header>
+
+<nav class="tabs">
+  <button class="active" onclick="showPage('quote',this)">Cotización</button>
+  <button onclick="showPage('materials',this)">Materiales</button>
+  <button onclick="showPage('clients',this)">Clientes</button>
+  <button onclick="showPage('saved',this)">Guardadas</button>
+</nav>
+
+<section id="quote" class="page active">
+  <div class="card">
+    <h2>Nueva cotización</h2>
+    <div class="row">
+      <div><label>Número</label><input id="qNumber"></div>
+      <div><label>Fecha</label><input id="qDate" type="date"></div>
+    </div>
+    <label>Cliente</label>
+    <select id="qClient"></select>
+    <label>Teléfono</label><input id="qPhone">
+    <label>Dirección</label><input id="qAddress">
+    <label>Descripción del trabajo</label><textarea id="qDescription"></textarea>
+  </div>
+
+  <div class="card">
+    <h2>Materiales</h2>
+    <div id="quoteMaterials"></div>
+    <button class="btn secondary" onclick="addQuoteMaterial()">+ Agregar material</button>
+  </div>
+
+  <div class="card">
+    <h2>Costos</h2>
+    <div class="row">
+      <div><label>Mano de obra ($)</label><input id="labor" type="number" step="0.01" value="0" oninput="calcQuote()"></div>
+      <div><label>IVU (%)</label><input id="taxRate" type="number" step="0.01" value="11.5" oninput="calcQuote()"></div>
+    </div>
+    <div class="summary">
+      Subtotal materiales: <span id="matSubtotal">$0.00</span><br>
+      IVU: <span id="taxTotal">$0.00</span><br>
+      Mano de obra: <span id="laborTotal">$0.00</span>
+    </div>
+    <hr>
+    <div class="total" id="grandTotal">$0.00</div>
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <button class="btn primary full" onclick="saveQuote()">Guardar cotización</button>
+      <button class="btn secondary full" onclick="downloadPDF()">Descargar PDF</button>
+    </div>
+  </div>
+</section>
+
+<section id="materials" class="page">
+  <div class="card">
+    <h2>Guardar material</h2>
+    <label>Nombre</label><input id="mName" placeholder="Ej. Codo PVC 1/2">
+    <div class="row">
+      <div><label>Precio ($)</label><input id="mPrice" type="number" step="0.01"></div>
+      <div><label>Suplidor</label><input id="mSupplier" placeholder="Opcional"></div>
+    </div>
+    <button class="btn primary full" onclick="saveMaterial()">Guardar material</button>
+  </div>
+  <div class="card">
+    <h2>Materiales guardados</h2>
+    <div id="materialList"></div>
+  </div>
+</section>
+
+<section id="clients" class="page">
+  <div class="card">
+    <h2>Guardar cliente</h2>
+    <label>Nombre</label><input id="cName">
+    <label>Teléfono</label><input id="cPhone">
+    <label>Dirección</label><input id="cAddress">
+    <button class="btn primary full" onclick="saveClient()">Guardar cliente</button>
+  </div>
+  <div class="card">
+    <h2>Clientes guardados</h2>
+    <div id="clientList"></div>
+  </div>
+</section>
+
+<section id="saved" class="page">
+  <div class="card">
+    <h2>Cotizaciones guardadas</h2>
+    <div id="quoteList"></div>
+  </div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const money = n => new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(Number(n)||0);
+
+let materials = JSON.parse(localStorage.getItem('ms_materials')||'[]');
+let clients = JSON.parse(localStorage.getItem('ms_clients')||'[]');
+let quotes = JSON.parse(localStorage.getItem('ms_quotes')||'[]');
+let qItems = [];
+
+function showPage(id,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('active'));
+  $(id).classList.add('active'); btn.classList.add('active');
+  if(id==='materials') renderMaterials();
+  if(id==='clients') renderClients();
+  if(id==='saved') renderQuotes();
+}
+
+function initQuote(){
+  const n = (Number(localStorage.getItem('ms_quote_counter')||0)+1);
+  $('qNumber').value = 'MS-' + String(n).padStart(4,'0');
+  $('qDate').value = new Date().toISOString().slice(0,10);
+  renderClientSelect();
+  qItems=[];
+  addQuoteMaterial();
+  calcQuote();
+}
+function renderClientSelect(){
+  $('qClient').innerHTML = '<option value="">Seleccionar cliente</option>' + clients.map((c,i)=>`<option value="${i}">${c.name}</option>`).join('');
+  $('qClient').onchange=()=>{
+    const c=clients[Number($('qClient').value)];
+    if(c){$('qPhone').value=c.phone||'';$('qAddress').value=c.address||''}
+  }
+}
+function saveMaterial(){
+  const name=$('mName').value.trim(), price=Number($('mPrice').value||0), supplier=$('mSupplier').value.trim();
+  if(!name){alert('Escribe el nombre del material');return}
+  materials.push({name,price,supplier});
+  localStorage.setItem('ms_materials',JSON.stringify(materials));
+  $('mName').value='';$('mPrice').value='';$('mSupplier').value='';
+  renderMaterials(); renderQuoteItems();
+}
+function renderMaterials(){
+  $('materialList').innerHTML = materials.length ? materials.map((m,i)=>`
+  <div class="saved-item"><b>${m.name}</b> — ${money(m.price)} ${m.supplier?`<span class="pill">${m.supplier}</span>`:''}
+  <button class="btn danger" style="float:right;padding:6px 9px" onclick="deleteMaterial(${i})">Eliminar</button></div>`).join('') : '<span class="muted">No hay materiales guardados.</span>';
+}
+function deleteMaterial(i){
+  materials.splice(i,1); localStorage.setItem('ms_materials',JSON.stringify(materials)); renderMaterials(); renderQuoteItems();
+}
+function saveClient(){
+  const name=$('cName').value.trim();
+  if(!name){alert('Escribe el nombre del cliente');return}
+  clients.push({name,phone:$('cPhone').value.trim(),address:$('cAddress').value.trim()});
+  localStorage.setItem('ms_clients',JSON.stringify(clients));
+  $('cName').value='';$('cPhone').value='';$('cAddress').value='';
+  renderClients(); renderClientSelect();
+}
+function renderClients(){
+  $('clientList').innerHTML = clients.length ? clients.map((c,i)=>`
+    <div class="saved-item"><b>${c.name}</b><br><span class="muted">${c.phone||''} ${c.address?'• '+c.address:''}</span>
+    <button class="btn danger" style="float:right;padding:6px 9px" onclick="deleteClient(${i})">Eliminar</button></div>`).join('') : '<span class="muted">No hay clientes guardados.</span>';
+}
+function deleteClient(i){
+  clients.splice(i,1); localStorage.setItem('ms_clients',JSON.stringify(clients)); renderClients(); renderClientSelect();
+}
+
+function addQuoteMaterial(){
+  qItems.push({materialIndex:'',qty:1,price:0});
+  renderQuoteItems();
+}
+function renderQuoteItems(){
+  $('quoteMaterials').innerHTML='';
+  qItems.forEach((it,i)=>{
+    const row=document.createElement('div');
+    row.className='material-row';
+    const opts='<option value="">Material</option>'+materials.map((m,idx)=>`<option value="${idx}" ${String(it.materialIndex)===String(idx)?'selected':''}>${m.name}</option>`).join('');
+    row.innerHTML=`
+      <select onchange="setMaterial(${i},this.value)">${opts}</select>
+      <input type="number" min="1" value="${it.qty}" oninput="qItems[${i}].qty=Number(this.value||0);calcQuote()" title="Cantidad">
+      <input type="number" step="0.01" value="${it.price}" oninput="qItems[${i}].price=Number(this.value||0);calcQuote()" title="Precio">
+      <button class="btn danger" onclick="qItems.splice(${i},1);renderQuoteItems();calcQuote()">×</button>`;
+    $('quoteMaterials').appendChild(row);
+  });
+}
+function setMaterial(i,val){
+  qItems[i].materialIndex=val;
+  const m=materials[Number(val)];
+  if(m) qItems[i].price=Number(m.price||0);
+  renderQuoteItems(); calcQuote();
+}
+function calcQuote(){
+  const subtotal=qItems.reduce((s,it)=>s+(Number(it.qty)||0)*(Number(it.price)||0),0);
+  const tax=subtotal*(Number($('taxRate').value||0)/100);
+  const labor=Number($('labor').value||0);
+  const total=subtotal+tax+labor;
+  $('matSubtotal').textContent=money(subtotal);
+  $('taxTotal').textContent=money(tax);
+  $('laborTotal').textContent=money(labor);
+  $('grandTotal').textContent=money(total);
+  return {subtotal,tax,labor,total};
+}
+function getQuoteData(){
+  const totals=calcQuote();
+  const client = clients[Number($('qClient').value)];
+  return {
+    number:$('qNumber').value,
+    date:$('qDate').value,
+    client: client ? client.name : '',
+    phone:$('qPhone').value,
+    address:$('qAddress').value,
+    description:$('qDescription').value,
+    taxRate:Number($('taxRate').value||0),
+    items:qItems.map(it=>({
+      name: materials[Number(it.materialIndex)]?.name || 'Material',
+      qty:Number(it.qty)||0,
+      price:Number(it.price)||0
+    })),
+    ...totals
+  };
+}
+function saveQuote(){
+  const q=getQuoteData();
+  if(!q.client){alert('Selecciona o guarda un cliente primero');return}
+  quotes.unshift(q);
+  localStorage.setItem('ms_quotes',JSON.stringify(quotes));
+  localStorage.setItem('ms_quote_counter', String(Number(localStorage.getItem('ms_quote_counter')||0)+1));
+  alert('Cotización guardada');
+  initQuote();
+}
+function renderQuotes(){
+  $('quoteList').innerHTML = quotes.length ? quotes.map((q,i)=>`
+    <div class="saved-item">
+      <b>${q.number} — ${q.client}</b><br>
+      <span class="muted">${q.date} • ${money(q.total)}</span><br>
+      <button class="btn secondary" style="margin-top:7px;padding:7px 10px" onclick="downloadSavedPDF(${i})">PDF</button>
+    </div>`).join('') : '<span class="muted">No hay cotizaciones guardadas.</span>';
+}
+function buildPDF(q){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  let y=18;
+  doc.setFontSize(20); doc.text('MS Plumbing',14,y); y+=8;
+  doc.setFontSize(10); doc.text('Cotización profesional',14,y); y+=10;
+  doc.setFontSize(11);
+  doc.text(`Cotización: ${q.number}`,14,y); doc.text(`Fecha: ${q.date}`,120,y); y+=8;
+  doc.text(`Cliente: ${q.client}`,14,y); y+=7;
+  doc.text(`Teléfono: ${q.phone||''}`,14,y); y+=7;
+  doc.text(`Dirección: ${q.address||''}`,14,y); y+=10;
+  doc.text('Descripción:',14,y); y+=6;
+  const lines=doc.splitTextToSize(q.description||'',180); doc.text(lines,14,y); y+=lines.length*6+6;
+  doc.setFont(undefined,'bold'); doc.text('Material',14,y); doc.text('Cant.',115,y); doc.text('Precio',140,y); doc.text('Total',170,y); y+=6;
+  doc.setFont(undefined,'normal');
+  q.items.forEach(it=>{
+    if(y>265){doc.addPage();y=20}
+    doc.text(String(it.name).slice(0,42),14,y);
+    doc.text(String(it.qty),118,y);
+    doc.text(money(it.price),138,y);
+    doc.text(money(it.qty*it.price),168,y);
+    y+=7;
+  });
+  y+=5;
+  doc.text(`Subtotal materiales: ${money(q.subtotal)}`,120,y); y+=7;
+  doc.text(`IVU (${q.taxRate}%): ${money(q.tax)}`,120,y); y+=7;
+  doc.text(`Mano de obra: ${money(q.labor)}`,120,y); y+=8;
+  doc.setFont(undefined,'bold'); doc.setFontSize(14); doc.text(`TOTAL: ${money(q.total)}`,120,y);
+  doc.setFontSize(9); doc.setFont(undefined,'normal');
+  doc.text('Gracias por confiar en MS Plumbing.',14,285);
+  return doc;
+}
+function downloadPDF(){
+  const q=getQuoteData();
+  if(!q.client){alert('Selecciona o guarda un cliente primero');return}
+  buildPDF(q).save(`${q.number}-${q.client}.pdf`);
+}
+function downloadSavedPDF(i){
+  const q=quotes[i]; buildPDF(q).save(`${q.number}-${q.client}.pdf`);
+}
+
+if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(()=>{}); }
+renderMaterials(); renderClients(); renderQuotes(); initQuote();
+</script>
+</body>
+</html>
