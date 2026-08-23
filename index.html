@@ -412,7 +412,7 @@
   </div>
 </section>
 
-<section id="clients" class="page">
+<section id="clients" class="page">F
   <div class="section-title">Clientes</div>
   <div class="grid">
     <div class="card">
@@ -663,7 +663,7 @@ function setMaterial(i,val){
 function calcQuote(){
   const subtotal=qItems.reduce((s,it)=>s+(Number(it.qty)||0)*(Number(it.price)||0),0);
   const factor=Number($('materialFactor').value||1.25);
-  const tax=subtotal*(Number($('taxRate').value||0)/100;
+  const tax=subtotal*(Number($('taxRate').value||0)/100);
   const factorTotal=(subtotal+tax)*factor;
   const labor=Number($('labor').value||0);
   const total=factorTotal+labor;
