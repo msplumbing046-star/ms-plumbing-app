@@ -666,7 +666,7 @@ function calcQuote(){
   const tax=subtotal*(Number($('taxRate').value||0)/100;
   const factorTotal=(subtotal+tax)*factor;
   const labor=Number($('labor').value||0);
-  const total=factorTotal+tax+labor;
+  const total=factorTotal+labor;
   $('matSubtotal').textContent=money(subtotal);
   $('factorLabel').textContent=factor.toFixed(2);
   $('factorTotal').textContent=money(factorTotal);
