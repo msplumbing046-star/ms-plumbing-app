@@ -114,6 +114,21 @@ let materials=JSON.parse(localStorage.getItem(KEYS.materials)||'[]'),clients=JSO
 let settings=JSON.parse(localStorage.getItem(KEYS.settings)||'null')||{company:'MS Plumbing',email:'MsPlumbing046@gmail.com',phone:'787-221-2310',location:'Fajardo, P.R.'};
 let qItems=[],materialPhoto='',recordPhoto='',expensePhoto=''; const signatureState={};
 function persist(key,data){localStorage.setItem(KEYS[key],JSON.stringify(data));refreshStats()}
+  async function syncCustomersToSupabase(data){
+  const rows = data.map(c => ({
+    id: c.id,
+    name: c.name || '',
+    phone: c.phone || null,
+    email: c.email || null,
+    address: c.address || null
+  }));
+
+  const { error } = await supabase
+    .from('customers')
+    .upsert(rows);
+
+  if(error) console.error('Error Supabase customers:', error);
+}
 function go(id,btn){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));$(id).classList.add('active');document.querySelectorAll('.bottom button').forEach(b=>b.classList.toggle('active',b.dataset.page===id));if(btn&&btn.dataset)btn.classList.add('active');if(id==='materials')renderMaterials();if(id==='clients')renderClients();if(id==='quotes'){renderQuotes();renderClientSelect()}if(id==='invoices')renderInvoices();if(id==='records'){renderRecordClientSelects();renderRecords()}if(id==='expenses')renderExpenses();if(id==='settings')renderSettings();window.scrollTo({top:0,behavior:'smooth'})}
 function quoteTab(which,btn){document.querySelectorAll('#quotes .sectiontabs button').forEach(b=>b.classList.remove('active'));btn.classList.add('active');$('quoteNew').classList.toggle('hidden',which!=='new');$('quoteListWrap').classList.toggle('hidden',which!=='list');if(which==='list')renderQuotes();if(which==='new'){setTimeout(()=>{['clientSignature','companySignature'].forEach(id=>{const c=$(id);if(c&&c._resizeSignatureCanvas)c._resizeSignatureCanvas()})},80)}}
 function invoiceTab(which,btn){document.querySelectorAll('#invoices .sectiontabs button').forEach(b=>b.classList.remove('active'));btn.classList.add('active');$('invoiceNew').classList.toggle('hidden',which!=='new');$('invoiceListWrap').classList.toggle('hidden',which!=='list');if(which==='list')renderInvoices()}
