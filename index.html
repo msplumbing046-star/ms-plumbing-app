@@ -113,7 +113,11 @@ const KEYS={materials:'ms_materials_v2',clients:'ms_clients_v2',quotes:'ms_quote
 let materials=JSON.parse(localStorage.getItem(KEYS.materials)||'[]'),clients=JSON.parse(localStorage.getItem(KEYS.clients)||'[]'),quotes=JSON.parse(localStorage.getItem(KEYS.quotes)||'[]'),invoices=JSON.parse(localStorage.getItem(KEYS.invoices)||'[]'),records=JSON.parse(localStorage.getItem(KEYS.records)||'[]'),expenses=JSON.parse(localStorage.getItem(KEYS.expenses)||'[]');
 let settings=JSON.parse(localStorage.getItem(KEYS.settings)||'null')||{company:'MS Plumbing',email:'MsPlumbing046@gmail.com',phone:'787-221-2310',location:'Fajardo, P.R.'};
 let qItems=[],materialPhoto='',recordPhoto='',expensePhoto=''; const signatureState={};
-function persist(key,data){localStorage.setItem(KEYS[key],JSON.stringify(data));refreshStats()}
+function persist(key,data){
+  localStorage.setItem(KEYS[key],JSON.stringify(data));
+  if(key === 'clients') syncCustomersToSupabase(data);
+  refreshStats();
+}
   async function syncCustomersToSupabase(data){
   const rows = data.map(c => ({
     id: c.id,
