@@ -107,6 +107,7 @@
 <script>
   const SUPABASE_URL = 'https://ysbojuhutwxwminwodbh.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_bNtAk-L7P0xt9-TXl-rLQQ_Jjq75BnM
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const $=id=>document.getElementById(id); const money=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(Number(n)||0); const today=()=>new Date().toISOString().slice(0,10);
 const KEYS={materials:'ms_materials_v2',clients:'ms_clients_v2',quotes:'ms_quotes_v2',invoices:'ms_invoices_v2',records:'ms_records_v2',expenses:'ms_expenses_v2',settings:'ms_settings_v2'};
 let materials=JSON.parse(localStorage.getItem(KEYS.materials)||'[]'),clients=JSON.parse(localStorage.getItem(KEYS.clients)||'[]'),quotes=JSON.parse(localStorage.getItem(KEYS.quotes)||'[]'),invoices=JSON.parse(localStorage.getItem(KEYS.invoices)||'[]'),records=JSON.parse(localStorage.getItem(KEYS.records)||'[]'),expenses=JSON.parse(localStorage.getItem(KEYS.expenses)||'[]');
