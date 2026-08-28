@@ -104,9 +104,10 @@
   <button data-page="clients" onclick="go('clients',this)"><span>☰</span>Más</button>
 </nav>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
   const SUPABASE_URL = 'https://ysbojuhutwxwminwodbh.supabase.co';
-  const SUPABASE_KEY = 'sb_publishable_bNtAk-L7P0xt9-TXl-rLQQ_Jjq75BnM
+  const SUPABASE_KEY = 'sb_publishable_bNtAk-L7P0xt9-TXl-rLQQ_Jjq75BnM';
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const $=id=>document.getElementById(id); const money=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(Number(n)||0); const today=()=>new Date().toISOString().slice(0,10);
 const KEYS={materials:'ms_materials_v2',clients:'ms_clients_v2',quotes:'ms_quotes_v2',invoices:'ms_invoices_v2',records:'ms_records_v2',expenses:'ms_expenses_v2',settings:'ms_settings_v2'};
